@@ -52,6 +52,7 @@ public class SEButtonListener implements GpioPinListenerDigital {
             }
 
         } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 
