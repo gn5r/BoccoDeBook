@@ -60,7 +60,7 @@
         <dependency>
             <groupId>com.github.gn5r</groupId>
             <artifactId>Speech2Text</artifactId>
-            <version>-SNAPSHOT</version>
+            <version>89d6d37fce</version>
         </dependency>
         
         <!--    NFC R/Wライブラリ    -->
