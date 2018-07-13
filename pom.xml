@@ -11,6 +11,40 @@
         <maven.compiler.target>1.8</maven.compiler.target>
     </properties>
     
+    <!--     実行可能jarファイル生成ライブラリ     -->
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <version>2.5.2</version>
+                <configuration>
+                    <!--     好きな名前を指定     -->
+                    <finalName>RunBook</finalName>
+                    <descriptorRefs>
+                        <descriptorRef>jar-with-dependencies</descriptorRef>
+                    </descriptorRefs>
+                    <archive>
+                        <manifest>
+                            <!--     実行させるMainクラスを指定     -->
+                            <mainClass>hal.tokyo.rd4c.boccodebook.Main</mainClass>
+                        </manifest>
+                    </archive>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>make-assembly</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>single</goal>
+                            <!--  goals == mojos  -->
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+    
     <!--    GitHub上のJavaプロジェクトをインポートするサービス    -->
     <repositories>
         <repository>
