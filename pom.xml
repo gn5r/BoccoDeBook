@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>hal.tokyo.rd4c</groupId>
+    <artifactId>BoccodeBook</artifactId>
+    <version>1.0-SNAPSHOT</version>
+    <packaging>jar</packaging>
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <maven.compiler.source>1.8</maven.compiler.source>
+        <maven.compiler.target>1.8</maven.compiler.target>
+    </properties>
+    
+    <!--    GitHub上のJavaプロジェクトをインポートするサービス    -->
+    <repositories>
+        <repository>
+            <id>jitpack.io</id>
+            <url>https://jitpack.io</url>
+        </repository>
+    </repositories>
+
+    <!--    インポートライブラリ群    -->
+    <dependencies>
+        
+        <!--    マイク・スピーカー&音声認識ライブラリ    -->
+        <dependency>
+            <groupId>com.github.gn5r</groupId>
+            <artifactId>Speech2Text</artifactId>
+            <version>-SNAPSHOT</version>
+        </dependency>
+        
+        <!--    NFC R/Wライブラリ    -->
+        <dependency>
+            <groupId>com.github.tema-link</groupId>
+            <artifactId>pi4nfc</artifactId>
+            <version>-SNAPSHOT</version>
+        </dependency>
+        
+        <!--    BoccoAPIライブラリ    -->
+        <dependency>
+            <groupId>com.github.gn5r</groupId>
+            <artifactId>bocco4j</artifactId>
+            <version>-SNAPSHOT</version>
+        </dependency>
+        
+    </dependencies>
+    
+</project>
