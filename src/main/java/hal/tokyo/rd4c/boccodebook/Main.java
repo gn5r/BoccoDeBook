@@ -18,8 +18,6 @@ import hal.tokyo.rd4c.speech2text.MicroPhone;
 import hal.tokyo.rd4c.speech2text.Speaker;
 import java.io.File;
 import java.io.IOException;
-import java.text.SimpleDateFormat;
-import java.util.Calendar;
 
 /**
  *
@@ -28,20 +26,25 @@ import java.util.Calendar;
 public class Main {
 
     private static final int ERROR = -1;
+
     /* mode:CardSet, CardScan, RecVoice */
-    private static String mode = "";
-    private static String sendText = "";
+    private static String mode;
+    private static String sendText;
     private static NFCReader nfcReader;
-    private static String setupSound = "setup/setup.wav";
+    private static final String setupSound = "setup/setup.wav";
     private static MicroPhone microPhone;
     private static Speaker speaker;
+
     /* BOCCOと接続用String */
-    private static String GOOGLE_API_KEY = "";
+    private static String GOOGLE_API_KEY;
+
     /* BoocoAPI(String APIKey, String EMAIL, String PASSWORD) */
     private static BoccoAPI boccoApi;
     private static TextMessage textMessage;
+
     /* 変換後文字列を格納するためのファイル名を格納 */
-    public static String recFileName = "";
+    public static String recFileName;
+
     /* GPIO */
     private static GpioPinDigitalInput startSE, event1SE, event2SE, endingSE, step;
     private static GpioPinDigitalOutput startSELED, event1SELED, event2SELED, endingSELED;
@@ -54,9 +57,8 @@ public class Main {
 
         /*初期化 */
         init(args);
-        
         /* stepボタンのリスナーをセット => modeごとに動作を変更 */
-        step.addListener(　/* mode 変更メソッド */　);
+        step.addListener( /* mode 変更メソッド */);
 
         while (true) {
             Thread.sleep(500);
@@ -66,7 +68,6 @@ public class Main {
 
     /* 初期化 */
     private static void init(String[] args) throws Exception {
-
 
         /* args[0]:BOCCOAPI args[1]:Email args[2]:PassWord args[3]:GOOGLE_API_KEY */
         boccoApi = new BoccoAPI(args[0], args[1], args[2]);
@@ -108,7 +109,7 @@ public class Main {
 
         endingSELED = gpio.provisionDigitalOutputPin(RaspiPin.GPIO_29, "endingSE", PinState.LOW);
         endingSELED.setShutdownOptions(true, PinState.LOW);
-        
+
         step = gpio.provisionDigitalInputPin(RaspiPin.GPIO_31, PinPullResistance.PULL_UP);
         step.setShutdownOptions(true);
 
