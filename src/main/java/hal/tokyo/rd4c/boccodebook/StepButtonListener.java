@@ -21,11 +21,11 @@ public class StepButtonListener implements GpioPinListenerDigital {
     private final BoccoAPI boccoAPI;
     private final Main main;
 
-    public StepButtonListener(int stage, String mode, BoccoAPI boccoAPI, Main main) {
+    public StepButtonListener(int stage, String mode, BoccoAPI boccoAPI) {
         this.stage = stage;
         this.mode = mode;
         this.boccoAPI = boccoAPI;
-        this.main = main;
+        this.main = new Main();
     }
 
     @Override
@@ -33,6 +33,7 @@ public class StepButtonListener implements GpioPinListenerDigital {
         
         switch (this.mode) {
             case "cardSet":
+                
                 break;
             case "cardJudge":
                 break;
