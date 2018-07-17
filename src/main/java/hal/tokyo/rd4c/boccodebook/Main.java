@@ -74,6 +74,8 @@ public class Main {
         GOOGLE_API_KEY = args[3];
         microPhone = new MicroPhone();
         speaker = new Speaker();
+        
+        textMessage = new TextMessage();
 
         microPhone.init();
         mode = "CardSet";
@@ -116,7 +118,7 @@ public class Main {
         /* BOCCOの接続が確立できた場合 */
         if (boccoApi.createSessions() == true) {
             boccoApi.getFirstRooID();
-            boccoApi.postMessage(textMessage.readText(TextMessage.SESSION_OK));
+            boccoApi.postMessage("");
         }
 
         /* ストーリーを格納するファイルの作成 */
@@ -125,7 +127,6 @@ public class Main {
 
     /* どのカードをセットするかBOCCOに喋ってもらう */
     private static void cardSet(int stage) throws Exception {
-        textMessage = new TextMessage();
 
         switch (stage) {
             /* 一枚目 */
