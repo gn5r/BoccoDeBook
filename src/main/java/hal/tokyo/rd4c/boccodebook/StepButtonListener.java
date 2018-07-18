@@ -30,16 +30,17 @@ public class StepButtonListener implements GpioPinListenerDigital {
 
     @Override
     public void handleGpioPinDigitalStateChangeEvent(GpioPinDigitalStateChangeEvent gpdsce) {
-        
+
         switch (this.mode) {
-            case "cardSet":
+            case "initEnd":
                 
                 break;
-            case "cardJudge":
+            case "cardSet":
+
                 break;
             case "RecVoice":
+                
                 break;
         }
     }
-
 }

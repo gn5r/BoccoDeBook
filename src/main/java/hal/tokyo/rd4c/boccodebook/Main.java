@@ -46,7 +46,7 @@ public class Main {
     public static String recFileName;
 
     /* GPIO */
-    private static GpioPinDigitalInput startSE, event1SE, event2SE, endingSE, step;
+    private static GpioPinDigitalInput startSE, event1SE, event2SE, endingSE, step, play, rec;
     private static GpioPinDigitalOutput startSELED, event1SELED, event2SELED, endingSELED;
     private static GpioController gpio;
 
@@ -57,8 +57,9 @@ public class Main {
 
         /*初期化 */
         init(args);
-        /* stepボタンのリスナーをセット => modeごとに動作を変更 */
-        step.addListener( /* mode 変更メソッド */);
+
+        /* mode = CardSet & stepボタンのリスナー設定 */
+        cardSet(stage);
 
         while (true) {
             Thread.sleep(500);
@@ -74,11 +75,9 @@ public class Main {
         GOOGLE_API_KEY = args[3];
         microPhone = new MicroPhone();
         speaker = new Speaker();
-        
         textMessage = new TextMessage();
 
         microPhone.init();
-        mode = "CardSet";
 
         /* 起動音を鳴らす */
         speaker.openFile(setupSound);
@@ -87,17 +86,17 @@ public class Main {
 
         gpio = GpioFactory.getInstance();
 
-        /*    各SEボタンとLED, ピンは仮    */
+        /*    各SEボタンとLED    */
         startSE = gpio.provisionDigitalInputPin(RaspiPin.GPIO_00, PinPullResistance.PULL_UP);
         startSE.setShutdownOptions(true);
 
         startSELED = gpio.provisionDigitalOutputPin(RaspiPin.GPIO_02, "startSE", PinState.LOW);
         startSELED.setShutdownOptions(true, PinState.LOW);
 
-        event1SE = gpio.provisionDigitalInputPin(RaspiPin.GPIO_04, PinPullResistance.PULL_UP);
+        event1SE = gpio.provisionDigitalInputPin(RaspiPin.GPIO_15, PinPullResistance.PULL_UP);
         event1SE.setShutdownOptions(true);
 
-        event1SELED = gpio.provisionDigitalOutputPin(RaspiPin.GPIO_05, "event1SE", PinState.LOW);
+        event1SELED = gpio.provisionDigitalOutputPin(RaspiPin.GPIO_16, "event1SE", PinState.LOW);
         event1SELED.setShutdownOptions(true, PinState.LOW);
 
         event2SE = gpio.provisionDigitalInputPin(RaspiPin.GPIO_26, PinPullResistance.PULL_UP);
@@ -112,21 +111,26 @@ public class Main {
         endingSELED = gpio.provisionDigitalOutputPin(RaspiPin.GPIO_29, "endingSE", PinState.LOW);
         endingSELED.setShutdownOptions(true, PinState.LOW);
 
-        step = gpio.provisionDigitalInputPin(RaspiPin.GPIO_31, PinPullResistance.PULL_UP);
+        play = gpio.provisionDigitalInputPin(RaspiPin.GPIO_22, PinPullResistance.PULL_UP);
+        play.setShutdownOptions(true);
+
+        step = gpio.provisionDigitalInputPin(RaspiPin.GPIO_23, PinPullResistance.PULL_UP);
         step.setShutdownOptions(true);
+
+        rec = gpio.provisionDigitalInputPin(RaspiPin.GPIO_22, PinPullResistance.PULL_UP);
+        rec.setShutdownOptions(true);
 
         /* BOCCOの接続が確立できた場合 */
         if (boccoApi.createSessions() == true) {
             boccoApi.getFirstRooID();
-            boccoApi.postMessage("");
+            boccoApi.postMessage(textMessage.readText(TextMessage.SESSION_OK));
         }
-
-        /* ストーリーを格納するファイルの作成 */
-        recFileName = createFile();
+        /* 初期化が終了 */
+        mode = "initEnd";
     }
 
     /* どのカードをセットするかBOCCOに喋ってもらう */
-    private static void cardSet(int stage) throws Exception {
+    public static void cardSet(int stage) throws Exception {
 
         switch (stage) {
             /* 一枚目 */
@@ -151,6 +155,12 @@ public class Main {
         /* ステップ押下の誘導メッセージ */
         sendText += textMessage.readText(TextMessage.CARD_STEP);
         boccoApi.postMessage(sendText);
+
+        /* カードセットが終了 */
+        mode = "cardSetEnd";
+
+        /* stepボタンのリスナーをセット => modeごとに動作を変更 */
+        step.addListener( /* mode 変更メソッド */);
     }
 
     /* NFCリーダーでデータを読み込む.   false:エラー   0 - 14:正常 */
@@ -166,7 +176,7 @@ public class Main {
     }
 
     /* カード番号取得後、正しいカードか判断 & 正しいカードならmodeを更新 */
-    public static boolean cardJudge(int stage) throws Exception {
+    public boolean cardJudge(int stage) throws Exception {
         /* カード番号取得 */
         int BGMNum = cardScan();
         /* 異常値：false, 正常値：true */
@@ -215,11 +225,6 @@ public class Main {
             default:
                 System.out.println("想定外の数値が入力されました。");
                 break;
-        }
-
-        /* 正しいカードがセットされていたらモードを更新 */
-        if (flag == true) {
-            mode = "CardScan";
         }
         return flag;
     }
