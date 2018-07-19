@@ -32,15 +32,21 @@ public class StepButtonListener implements GpioPinListenerDigital {
     public void handleGpioPinDigitalStateChangeEvent(GpioPinDigitalStateChangeEvent gpdsce) {
 
         switch (this.mode) {
-            case "initEnd":
-                
-                break;
-            case "cardSet":
+            case "cardSetEnd": {
+                try {
+                    /* カード認識＆カード判定に進む */
+                    this.main.cardJudge(stage);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+            break;
 
-                break;
-            case "RecVoice":
-                
+            /* 終わりのカードか判断する。終わりならwhileから抜ける */
+            case "recVoiceEnd":
+                this.main.endJudge();
                 break;
         }
     }
 }
+
