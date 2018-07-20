@@ -19,12 +19,14 @@ import javax.sound.sampled.UnsupportedAudioFileException;
  *
  * @author gn5r
  */
-public class BGMPlayer {
+public class BGMPlayer extends Thread {
 
     private final AudioInputStream ais;
     private final DataLine.Info dataLine;
     private final SourceDataLine cardBGM;
     private final byte[] data;
+
+    private boolean flag;
 
     public BGMPlayer(int BGMNum) throws UnsupportedAudioFileException, IOException, LineUnavailableException {
         this.ais = AudioSystem.getAudioInputStream(new File(BGMDir(BGMNum)));
@@ -37,23 +39,31 @@ public class BGMPlayer {
         this.cardBGM.start();
 
         this.data = new byte[this.cardBGM.getBufferSize()];
+
+        this.flag = true;
     }
 
-    public void startBGM() throws IOException {
+    @Override
+    public void run() {
         int size = -1;
 
         while (true) {
 
-            size = this.ais.read(this.data);
-            if (size == -1) {
-                break;
+            try {
+                
+                size = this.ais.read(this.data);
+                if (size == -1 || !flag) break;
+
+                this.cardBGM.write(this.data, 0, size);
+            } catch (Exception e) {
             }
 
-            this.cardBGM.write(this.data, 0, size);
         }
     }
 
     public void stopBGM() {
+        this.flag = false;
+
         this.cardBGM.drain();
         this.cardBGM.stop();
         this.cardBGM.close();
@@ -67,7 +77,7 @@ public class BGMPlayer {
             case 0:
             case 1:
             case 2:
-                fileDir = "start" + BGMNum + ".wav";
+                fileDir += "start" + BGMNum + ".wav";
                 break;
 
             /*    eventカード    */
@@ -80,14 +90,14 @@ public class BGMPlayer {
             case 9:
             case 10:
             case 11:
-                fileDir = "event" + BGMNum + ".wav";
+                fileDir += "event" + BGMNum + ".wav";
                 break;
 
             /*    endカード    */
             case 12:
             case 13:
             case 14:
-                fileDir = "end" + BGMNum + ".wav";
+                fileDir += "end" + BGMNum + ".wav";
                 break;
         }
 
