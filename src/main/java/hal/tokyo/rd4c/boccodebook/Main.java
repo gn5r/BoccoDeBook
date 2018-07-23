@@ -7,7 +7,6 @@ package hal.tokyo.rd4c.boccodebook;
 
 import com.pi4j.io.gpio.GpioController;
 import com.pi4j.io.gpio.GpioFactory;
-import com.pi4j.io.gpio.GpioPinDigital;
 import com.pi4j.io.gpio.GpioPinDigitalInput;
 import com.pi4j.io.gpio.GpioPinDigitalOutput;
 import com.pi4j.io.gpio.PinPullResistance;
@@ -57,6 +56,8 @@ public class Main {
     /* 終わりflag */
     private static boolean endFlag = false;
 
+    private static final int CUT_LENGTH = 150;
+
     /* BoocoAPI(String APIKey, String Email, String PassWord) */
     private static BoccoAPI boccoApi;
     private static TextMessage textMessage;
@@ -89,9 +90,6 @@ public class Main {
             return;
         }
     }
-    
-    
-    
 
     /* 初期化 */
     private static void init(String[] args) throws Exception {
@@ -165,9 +163,6 @@ public class Main {
             boccoApi.postMessage(textMessage.readText(TextMessage.SESSION_OK));
         }
     }
-    
-    
-    
 
     /* どのカードをセットするかBOCCOに喋ってもらう */
     public static void cardSet(int stage) throws Exception {
@@ -273,10 +268,6 @@ public class Main {
         /* 録音ボタンのリスナーを設定 */
         return flag;
     }
-    
-    
-    
-    
 
     /* ゲーム実行時呼ばれる */
     public void gamePlay() throws Exception {
@@ -312,14 +303,12 @@ public class Main {
     public void writeFile(String data) throws IOException {
         /* story.txt */
         File file = new File(txtFilePath);
-        /* 終端子挿入 */
-        data += "~";
 
         try {
             /* 書き込みが可能ならば */
             if (checkBeforeWritefile(file)) {
-                PrintWriter pw = new PrintWriter(new BufferedWriter(new FileWriter(file)));
-                /* 文字列の書き込み(終端子 ”~”込み) 改行して保存 */
+                PrintWriter pw = new PrintWriter(new BufferedWriter(new FileWriter(file, true)));
+                /* 文字列の書き込み & 改行して保存 */
                 pw.println(data);
                 /* ファイルを閉じる */
                 pw.close();
@@ -331,6 +320,27 @@ public class Main {
         }
     }
 
+    /* 再生ボタンが押されたときの挙動 */
+    public void recentlySend() throws Exception{
+        String returnData = "";
+        
+        try {
+            File file = new File(txtFilePath);
+            BufferedReader br = new BufferedReader(new FileReader(file));
+            returnData = br.readLine();
+            /* 文字列全てから必要なものだけ抽出する */
+            while (returnData != null) {
+                System.out.print(returnData);
+            }
+            returnData = br.readLine();
+            br.close();
+        } catch (FileNotFoundException e) {
+        } catch (IOException e) {
+        }
+        /* 直近のデータを送信 */
+        boccoApi.postMessage(returnData);
+    }
+
     /* 書き込み可能か判断する. */
     private static boolean checkBeforeWritefile(File file) {
         if (file.exists()) {
@@ -340,10 +350,6 @@ public class Main {
         }
         return false;
     }
-    
-    
-    
-    
 
     /* 終わり判定＆カードセットへ行くかBOCCOに文字列を送信するか */
     public void endJudge() {
@@ -356,19 +362,31 @@ public class Main {
 
     /* BOCCOに今までの物語を送信する txt名:txtFilePath */
     private static void sendStory() throws Exception {
-//        String[] sendData = new String[RECOR_DATA];
         String story = "";
         File file = new File(txtFilePath);
         BufferedReader br = new BufferedReader(new FileReader(file));
+        int cnt = 0;
 
         try {
             story = br.readLine();
             /* 全ての列を網羅 */
             while (story != null) {
+                /* BOCCOに送れる範囲なら送信 */
+                if (story.length() < CUT_LENGTH) {
+                    boccoApi.postMessage(story);
+                } else {
+                    /* CUT_LENGTHより長いならCUT_LENGTHずつ分けてBOCCOへ送信 */
+                    for (cnt = 0; cnt + CUT_LENGTH < story.length(); cnt += CUT_LENGTH) {
+                        boccoApi.postMessage(story.substring(cnt, cnt + CUT_LENGTH));
+                    }
+                    Thread.sleep(2000);
+                    /* 最後の行 */
+                    boccoApi.postMessage(story.substring(cnt));
+                }
                 /* 1行ずつ読み取りBOCCOに送信 */
                 story = br.readLine();
-                Thread.sleep(500);
-                boccoApi.postMessage(story);
+                /* BOCCOの読み待ち */
+                Thread.sleep(2000);
             }
             br.close();
         } catch (FileNotFoundException e) {

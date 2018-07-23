@@ -39,7 +39,7 @@ public class TextMessage {
 
         try {
             File file = new File(textPath);
-            br = new BufferedReader(new FileReader(file));
+           br = new BufferedReader(new FileReader(file));
             str = br.readLine();
             /* 文字列全てから必要なものだけ抽出する */
             while (str != null) {
@@ -57,7 +57,7 @@ public class TextMessage {
         } catch (IOException e) {
             /* 入出力の例外、割り込み発生によるエラー */
             System.out.println(e);
-        }
+        } 
         return str;
     }
 }
