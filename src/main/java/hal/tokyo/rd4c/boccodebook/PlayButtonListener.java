@@ -24,10 +24,13 @@ public PlayButtonListener(BGMPlayer bgmPlayer){
     @Override
     public void handleGpioPinDigitalStateChangeEvent(GpioPinDigitalStateChangeEvent gpdsce) {
         if(gpdsce.getState() == PinState.LOW){
+            /* BGM 停止 */
             this.bgmPlayer.stopBGM();
             
-            /*    Boccoへメッセージ送信    */
+            /*    Boccoへ最新メッセージ送信    */
             
+            
+            /* BGM　再開 */
             this.bgmPlayer.start();
         }
     }

@@ -17,7 +17,7 @@ import java.io.IOException;
  */
 public class TextMessage {
 
-    private static final String textPass = "Text/Message.txt";
+    private static final String textPath = "Text/Message.txt";
     private int cnt;
     private BufferedReader br;
 
@@ -38,7 +38,7 @@ public class TextMessage {
         cnt = 0;
 
         try {
-            File file = new File(textPass);
+            File file = new File(textPath);
             br = new BufferedReader(new FileReader(file));
             str = br.readLine();
             /* 文字列全てから必要なものだけ抽出する */
@@ -50,30 +50,6 @@ public class TextMessage {
                 str = br.readLine();
                 cnt++;
             }
-            br.close();
-        } catch (FileNotFoundException e) {
-            /* ファイルが見つからなかった */
-            System.out.println(e);
-        } catch (IOException e) {
-            /* 入出力の例外、割り込み発生によるエラー */
-            System.out.println(e);
-        }
-        return str;
-    }
-
-    public String readConData() throws FileNotFoundException, IOException {
-        String str = new String();
-        String conPass = Main.recFileName;
-
-        try {
-            File file = new File(conPass);
-            br = new BufferedReader(new FileReader(file));
-            str = br.readLine();
-            /* 文字列全てから必要なものだけ抽出する */
-            while (str != null) {
-                System.out.print(str);
-            }
-            str = br.readLine();
             br.close();
         } catch (FileNotFoundException e) {
             /* ファイルが見つからなかった */
