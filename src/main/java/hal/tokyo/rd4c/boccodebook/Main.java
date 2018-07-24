@@ -16,8 +16,14 @@ import hal.tokyo.rd4c.bocco4j.BoccoAPI;
 import hal.tokyo.rd4c.nfc.NFCReader;
 import hal.tokyo.rd4c.speech2text.MicroPhone;
 import hal.tokyo.rd4c.speech2text.Speaker;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
+import java.io.PrintWriter;
 
 /**
  *
@@ -31,7 +37,9 @@ public class Main {
     private static String mode;
     private static String sendText;
     private static NFCReader nfcReader;
-    private static final String setupSound = "setup/setup.wav";
+    /* 起動音のパス */
+    private static final String setupSoundPath = "setup/setup.wav";
+    /* 物語格納用のパス */
     private static final String txtFilePath = "text/story.txt";
 
     private static MicroPhone microPhone;
@@ -42,10 +50,13 @@ public class Main {
 
     /* BGM番号 */
     private static int BGMNum = 0;
+    private static BGMPlayer BPlayer;
     /* ステージ回数0-3 */
     private static int stage = 0;
     /* 終わりflag */
     private static boolean endFlag = false;
+
+    private static final int CUT_LENGTH = 150;
 
     /* BoocoAPI(String APIKey, String Email, String PassWord) */
     private static BoccoAPI boccoApi;
@@ -74,7 +85,9 @@ public class Main {
                 Thread.sleep(500);
             }
             /* BOCCOに今までの文字列を送信 */
-
+            sendStory();
+            /* 終了 */
+            return;
         }
     }
 
@@ -96,7 +109,7 @@ public class Main {
         microPhone.init();
 
         /* 起動音を鳴らす */
-        speaker.openFile(setupSound);
+        speaker.openFile(setupSoundPath);
         speaker.playSE();
         speaker.stopSE();
 
@@ -252,7 +265,26 @@ public class Main {
         /* リスナーの削除 */
         step.removeAllListeners();
 
+        /* 録音ボタンのリスナーを設定 */
         return flag;
+    }
+
+    /* ゲーム実行時呼ばれる */
+    public void gamePlay() throws Exception {
+        BPlayer = new BGMPlayer(BGMNum);
+        BPlayer.start();
+        rec.addListener(new RecordingButtonListener(GOOGLE_API_KEY));
+    }
+
+    /* BGMの終了(録音終了のstep押下時) */
+    public void BGMStop() {
+        BPlayer.stopBGM();
+    }
+
+    /* stepとplayのリスナーを設定する */
+    public void setListener() {
+        step.addListener(new StepButtonListener(stage, mode, boccoApi));
+        play.addListener(new PlayButtonListener(BPlayer));
     }
 
     /* 変換後文字列を格納するためのtxtファイル */
@@ -267,6 +299,58 @@ public class Main {
         }
     }
 
+    /* 音声->文字列化したものをファイルに書き込み */
+    public void writeFile(String data) throws IOException {
+        /* story.txt */
+        File file = new File(txtFilePath);
+
+        try {
+            /* 書き込みが可能ならば */
+            if (checkBeforeWritefile(file)) {
+                PrintWriter pw = new PrintWriter(new BufferedWriter(new FileWriter(file, true)));
+                /* 文字列の書き込み & 改行して保存 */
+                pw.println(data);
+                /* ファイルを閉じる */
+                pw.close();
+            } else {
+                System.out.println("ファイルに書き込めません");
+            }
+        } catch (Exception e) {
+            System.out.println(e);
+        }
+    }
+
+    /* 再生ボタンが押されたときの挙動 */
+    public void recentlySend() throws Exception{
+        String returnData = "";
+        
+        try {
+            File file = new File(txtFilePath);
+            BufferedReader br = new BufferedReader(new FileReader(file));
+            returnData = br.readLine();
+            /* 文字列全てから必要なものだけ抽出する */
+            while (returnData != null) {
+                System.out.print(returnData);
+            }
+            returnData = br.readLine();
+            br.close();
+        } catch (FileNotFoundException e) {
+        } catch (IOException e) {
+        }
+        /* 直近のデータを送信 */
+        boccoApi.postMessage(returnData);
+    }
+
+    /* 書き込み可能か判断する. */
+    private static boolean checkBeforeWritefile(File file) {
+        if (file.exists()) {
+            if (file.isFile() && file.canWrite()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     /* 終わり判定＆カードセットへ行くかBOCCOに文字列を送信するか */
     public void endJudge() {
         if (11 < BGMNum && BGMNum <= 14) {
@@ -274,5 +358,39 @@ public class Main {
         }
         /* 次のステージ（カード）へ移行 */
         stage++;
+    }
+
+    /* BOCCOに今までの物語を送信する txt名:txtFilePath */
+    private static void sendStory() throws Exception {
+        String story = "";
+        File file = new File(txtFilePath);
+        BufferedReader br = new BufferedReader(new FileReader(file));
+        int cnt = 0;
+
+        try {
+            story = br.readLine();
+            /* 全ての列を網羅 */
+            while (story != null) {
+                /* BOCCOに送れる範囲なら送信 */
+                if (story.length() < CUT_LENGTH) {
+                    boccoApi.postMessage(story);
+                } else {
+                    /* CUT_LENGTHより長いならCUT_LENGTHずつ分けてBOCCOへ送信 */
+                    for (cnt = 0; cnt + CUT_LENGTH < story.length(); cnt += CUT_LENGTH) {
+                        boccoApi.postMessage(story.substring(cnt, cnt + CUT_LENGTH));
+                    }
+                    Thread.sleep(2000);
+                    /* 最後の行 */
+                    boccoApi.postMessage(story.substring(cnt));
+                }
+                /* 1行ずつ読み取りBOCCOに送信 */
+                story = br.readLine();
+                /* BOCCOの読み待ち */
+                Thread.sleep(2000);
+            }
+            br.close();
+        } catch (FileNotFoundException e) {
+        } catch (IOException e) {
+        }
     }
 }

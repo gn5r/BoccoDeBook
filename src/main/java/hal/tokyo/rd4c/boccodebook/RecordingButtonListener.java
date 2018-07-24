@@ -19,56 +19,59 @@ import javax.sound.sampled.LineUnavailableException;
  */
 public class RecordingButtonListener implements GpioPinListenerDigital {
 
-    private final BGMPlayer bgmPlayer;
     private final MicroPhone microPhone;
     private final GoogleSpeechAPI googleAPI;
     private int pushCnt;
-    
-    public RecordingButtonListener(BGMPlayer bgmPlayer,String GoogleAPIKey) {
-        
+    private final Main main;
+
+    public RecordingButtonListener(String GoogleAPIKey) {
+
         this.pushCnt = 0;
-        this.bgmPlayer = bgmPlayer;
         this.microPhone = new MicroPhone();
         this.googleAPI = new GoogleSpeechAPI(GoogleAPIKey);
-        
+
+        this.main = new Main();
+
         try {
             this.microPhone.init();
         } catch (LineUnavailableException e) {
             e.printStackTrace();
         }
-        
+
     }
 
     @Override
     public void handleGpioPinDigitalStateChangeEvent(GpioPinDigitalStateChangeEvent gpdsce) {
         if (gpdsce.getState() == PinState.LOW) {
-            
+
             this.pushCnt++;
-            
+
             try {
+                /* 300000byte分の音データ録音 */
                 this.microPhone.startRec();
                 this.microPhone.stopRec();
-                
+
+                /* 引数：ファイル名　.wavに変換 */
                 File recData = this.microPhone.convertWav("voice");
                 this.googleAPI.setFilePATH(recData.getPath());
-                
+
+                /* 変換後文字列格納変数 */
                 String result = this.googleAPI.postGoogleAPI();
-                
+
                 /*    音声認識が正常にされた場合    */
-                if(!result.matches(null)){
+                if (!result.matches(null)) {
                     
+                    /* ファイルに書き込み(一行データ)*/
+                    this.main.writeFile(result);
                 }
-                
+
                 /*    録音ボタンが初めて押されたかどうかの検出    */
-                if(this.pushCnt == 1){
+                if (this.pushCnt == 1) {
                     /*    再生ボタンとステップボタンのリスナーをセット    */
+                    this.main.setListener();
                 }
-                
             } catch (Exception e) {
             }
-            
-            
         }
     }
-
 }

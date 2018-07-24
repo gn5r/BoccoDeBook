@@ -44,9 +44,9 @@ public class StepButtonListener implements GpioPinListenerDigital {
 
             /* 終わりのカードか判断する。終わりならwhileから抜ける */
             case "recVoiceEnd":
+                this.main.BGMStop();
                 this.main.endJudge();
                 break;
         }
     }
 }
-
