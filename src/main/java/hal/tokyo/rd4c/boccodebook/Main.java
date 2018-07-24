@@ -56,10 +56,14 @@ public class Main {
     /* 終わりflag */
     private static boolean endFlag = false;
 
+    /*    1フレーズが完成したかどうか    */
+    private static boolean phraseEnd;
+
+    /*    Boccoに送信する際の文字列数    */
     private static final int CUT_LENGTH = 150;
 
-    /* BoocoAPI(String APIKey, String Email, String PassWord) */
-    private static BoccoAPI boccoApi;
+    /* BoocoAPI(String APIKey, String Email, String Password) */
+    private static BoccoAPI boccoAPI;
     private static TextMessage textMessage;
 
     /* 変換後文字列を格納するためのファイル名を格納 */
@@ -76,19 +80,18 @@ public class Main {
         /*初期化 */
         init(args);
 
-        while (true) {
+        while (!endFlag) {
             /* mode = CardSet & stepボタンのリスナー設定 */
             cardSet(stage);
 
             /* 終わりカードがセットされていない間繰り返す */
-            while (!endFlag) {
+            while (!phraseEnd) {
                 Thread.sleep(500);
             }
-            /* BOCCOに今までの文字列を送信 */
-            sendStory();
-            /* 終了 */
-            return;
         }
+
+        /* BOCCOに今までの文字列を送信 */
+        sendStory();
     }
 
     /* 初期化 */
@@ -100,7 +103,7 @@ public class Main {
         }
 
         /* args[0]:BOCCOAPI args[1]:Email args[2]:PassWord args[3]:GOOGLE_API_KEY */
-        boccoApi = new BoccoAPI(args[0], args[1], args[2]);
+        boccoAPI = new BoccoAPI(args[0], args[1], args[2]);
         GOOGLE_API_KEY = args[3];
         microPhone = new MicroPhone();
         speaker = new Speaker();
@@ -158,14 +161,16 @@ public class Main {
         step.setShutdownOptions(true);
 
         /* BOCCOの接続が確立できた場合 */
-        if (boccoApi.createSessions() == true) {
-            boccoApi.getFirstRooID();
-            boccoApi.postMessage(textMessage.readText(TextMessage.SESSION_OK));
+        if (boccoAPI.createSessions() == true) {
+            boccoAPI.getFirstRooID();
+            boccoAPI.postMessage(textMessage.readText(TextMessage.SESSION_OK));
         }
     }
 
     /* どのカードをセットするかBOCCOに喋ってもらう */
     public static void cardSet(int stage) throws Exception {
+
+        phraseEnd = false;
 
         switch (stage) {
             /* 一枚目 */
@@ -189,13 +194,13 @@ public class Main {
 
         /* ステップ押下の誘導メッセージ */
         sendText += textMessage.readText(TextMessage.CARD_STEP);
-        boccoApi.postMessage(sendText);
+        boccoAPI.postMessage(sendText);
 
         /* カードセットが終了 */
         mode = "cardSetEnd";
 
         /* stepボタンのリスナーをセット => modeごとに動作を変更 */
-        step.addListener(new StepButtonListener(stage, mode, boccoApi));
+        step.addListener(new StepButtonListener(stage, mode, boccoAPI));
     }
 
     /* NFCリーダーでデータを読み込む.   false:エラー   0 - 14:正常 */
@@ -283,7 +288,7 @@ public class Main {
 
     /* stepとplayのリスナーを設定する */
     public void setListener() {
-        step.addListener(new StepButtonListener(stage, mode, boccoApi));
+        step.addListener(new StepButtonListener(stage, mode, boccoAPI));
         play.addListener(new PlayButtonListener(BPlayer));
     }
 
@@ -321,9 +326,9 @@ public class Main {
     }
 
     /* 再生ボタンが押されたときの挙動 */
-    public void recentlySend() throws Exception{
+    public void recentlySend() throws Exception {
         String returnData = "";
-        
+
         try {
             File file = new File(txtFilePath);
             BufferedReader br = new BufferedReader(new FileReader(file));
@@ -338,7 +343,7 @@ public class Main {
         } catch (IOException e) {
         }
         /* 直近のデータを送信 */
-        boccoApi.postMessage(returnData);
+        boccoAPI.postMessage(returnData);
     }
 
     /* 書き込み可能か判断する. */
@@ -357,6 +362,7 @@ public class Main {
             endFlag = true;
         }
         /* 次のステージ（カード）へ移行 */
+        phraseEnd = true;
         stage++;
     }
 
@@ -373,15 +379,15 @@ public class Main {
             while (story != null) {
                 /* BOCCOに送れる範囲なら送信 */
                 if (story.length() < CUT_LENGTH) {
-                    boccoApi.postMessage(story);
+                    boccoAPI.postMessage(story);
                 } else {
                     /* CUT_LENGTHより長いならCUT_LENGTHずつ分けてBOCCOへ送信 */
                     for (cnt = 0; cnt + CUT_LENGTH < story.length(); cnt += CUT_LENGTH) {
-                        boccoApi.postMessage(story.substring(cnt, cnt + CUT_LENGTH));
+                        boccoAPI.postMessage(story.substring(cnt, cnt + CUT_LENGTH));
                     }
                     Thread.sleep(2000);
                     /* 最後の行 */
-                    boccoApi.postMessage(story.substring(cnt));
+                    boccoAPI.postMessage(story.substring(cnt));
                 }
                 /* 1行ずつ読み取りBOCCOに送信 */
                 story = br.readLine();
