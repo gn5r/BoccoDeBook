@@ -17,7 +17,7 @@ import java.io.IOException;
  */
 public class TextMessage {
 
-    private static final String textPath = "Text/Message.txt";
+    private static final String textPath = "text/Message.txt";
     private int cnt;
     private BufferedReader br;
 
@@ -34,7 +34,8 @@ public class TextMessage {
 
     /* return：テキストファイルから読み出したメッセージ文字列 */
     public String readText(int MessageNum) {
-        String str = new String();
+        String str = "";
+        String ret = "";
         cnt = 0;
 
         try {
@@ -46,6 +47,7 @@ public class TextMessage {
 
                 if (cnt == MessageNum) {
                     System.out.print(str);
+                    ret = str;
                 }
                 str = br.readLine();
                 cnt++;
@@ -58,6 +60,6 @@ public class TextMessage {
             /* 入出力の例外、割り込み発生によるエラー */
             System.out.println(e);
         } 
-        return str;
+        return ret;
     }
 }

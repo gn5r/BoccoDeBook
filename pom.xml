@@ -66,7 +66,7 @@
         <!--    NFC R/Wライブラリ    -->
         <dependency>
             <groupId>com.github.tema-link</groupId>
-            <artifactId>pi4nfc</artifactId>
+            <artifactId>nfcButton</artifactId>
             <version>-SNAPSHOT</version>
         </dependency>
         

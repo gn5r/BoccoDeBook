@@ -42,7 +42,6 @@ public class Main {
     /* 物語格納用のパス */
     private static final String txtFilePath = "text/story.txt";
 
-    private static MicroPhone microPhone;
     private static Speaker speaker;
 
     /* BOCCOと接続用String */
@@ -105,11 +104,8 @@ public class Main {
         /* args[0]:BOCCOAPI args[1]:Email args[2]:PassWord args[3]:GOOGLE_API_KEY */
         boccoAPI = new BoccoAPI(args[0], args[1], args[2]);
         GOOGLE_API_KEY = args[3];
-        microPhone = new MicroPhone();
         speaker = new Speaker();
         textMessage = new TextMessage();
-
-        microPhone.init();
 
         /* 起動音を鳴らす */
         speaker.openFile(setupSoundPath);
@@ -164,6 +160,7 @@ public class Main {
         if (boccoAPI.createSessions() == true) {
             boccoAPI.getFirstRooID();
             boccoAPI.postMessage(textMessage.readText(TextMessage.SESSION_OK));
+            Thread.sleep(4000);
         }
     }
 
@@ -195,6 +192,8 @@ public class Main {
         /* ステップ押下の誘導メッセージ */
         sendText += textMessage.readText(TextMessage.CARD_STEP);
         boccoAPI.postMessage(sendText);
+        
+        Thread.sleep(4000);
 
         /* カードセットが終了 */
         mode = "cardSetEnd";
@@ -270,7 +269,6 @@ public class Main {
         /* リスナーの削除 */
         step.removeAllListeners();
 
-        /* 録音ボタンのリスナーを設定 */
         return flag;
     }
 
@@ -278,6 +276,7 @@ public class Main {
     public void gamePlay() throws Exception {
         BPlayer = new BGMPlayer(BGMNum);
         BPlayer.start();
+        /* 録音ボタンのリスナーを設定 */
         rec.addListener(new RecordingButtonListener(GOOGLE_API_KEY));
     }
 
@@ -291,6 +290,7 @@ public class Main {
         step.addListener(new StepButtonListener(stage, mode, boccoAPI));
         play.addListener(new PlayButtonListener(BPlayer));
     }
+    
 
     /* 変換後文字列を格納するためのtxtファイル */
     private static void createFile(String filePath) throws IOException {

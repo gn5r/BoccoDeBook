@@ -46,9 +46,8 @@ public class BGMPlayer extends Thread {
     @Override
     public void run() {
         int size = -1;
-
         while (true) {
-
+           
             try {
                 
                 size = this.ais.read(this.data);
@@ -77,7 +76,7 @@ public class BGMPlayer extends Thread {
             case 0:
             case 1:
             case 2:
-                fileDir += "start" + BGMNum + ".wav";
+                fileDir += BGMNum + ".wav";
                 break;
 
             /*    eventカード    */
@@ -90,14 +89,14 @@ public class BGMPlayer extends Thread {
             case 9:
             case 10:
             case 11:
-                fileDir += "event" + BGMNum + ".wav";
+                fileDir += BGMNum + ".wav";
                 break;
 
             /*    endカード    */
             case 12:
             case 13:
             case 14:
-                fileDir += "end" + BGMNum + ".wav";
+                fileDir += BGMNum + ".wav";
                 break;
         }
 

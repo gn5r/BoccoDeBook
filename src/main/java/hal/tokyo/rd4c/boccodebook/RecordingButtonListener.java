@@ -43,12 +43,12 @@ public class RecordingButtonListener implements GpioPinListenerDigital {
     @Override
     public void handleGpioPinDigitalStateChangeEvent(GpioPinDigitalStateChangeEvent gpdsce) {
         if (gpdsce.getState() == PinState.LOW) {
-
             this.pushCnt++;
 
             try {
                 /* 300000byte分の音データ録音 */
                 this.microPhone.startRec();
+                //System.out.println("startRec");
                 this.microPhone.stopRec();
 
                 /* 引数：ファイル名　.wavに変換 */
@@ -57,10 +57,10 @@ public class RecordingButtonListener implements GpioPinListenerDigital {
 
                 /* 変換後文字列格納変数 */
                 String result = this.googleAPI.postGoogleAPI();
-
+                System.out.println("変換中");
                 /*    音声認識が正常にされた場合    */
                 if (!result.matches(null)) {
-                    
+                    System.out.println(result);
                     /* ファイルに書き込み(一行データ)*/
                     this.main.writeFile(result);
                 }
