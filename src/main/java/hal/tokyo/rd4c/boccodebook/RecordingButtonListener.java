@@ -74,12 +74,9 @@ public class RecordingButtonListener implements GpioPinListenerDigital {
                     this.main.sendBoccoText(textMessage.readText(TextMessage.NOT_REC));
                 }
 
-                /*    録音ボタンが初めて押されたかどうかの検出    */
-                if (this.pushCnt == 1) {
-                    /*    再生ボタンとステップボタンのリスナーをセット    */
-                    System.out.println("pushCnt == 1");
-                    this.main.setListener();
-                }
+                /*    再生ボタンとステップボタンのリスナーをセット    */
+                System.out.println("pushCnt == 1");
+                this.main.setListener();
             } catch (Exception e) {
                 e.printStackTrace();
             }
