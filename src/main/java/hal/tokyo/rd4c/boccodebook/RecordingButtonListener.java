@@ -63,6 +63,7 @@ public class RecordingButtonListener implements GpioPinListenerDigital {
                 if (result != null) {
                     /* 空白があるとBoccoが喋らなくなるため空白を句読点に変換 */
                     result = result.replace("　", "、");
+                    result = result.replace(" ", "、");
                     /* 正常に録れたことをBoccoへ送信 */
                     this.main.sendBoccoText(textMessage.readText(TextMessage.OK_REC));
                     System.out.println("変換文字列:" + result);

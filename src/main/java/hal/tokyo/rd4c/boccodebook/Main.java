@@ -93,8 +93,8 @@ public class Main {
                 Thread.sleep(1000);
             }
         }
-
         /* BOCCOに今までの文字列を送信 & 終了*/
+        sendBoccoText(textMessage.readText(TextMessage.END_STORY));
         sendStory();
     }
 
@@ -166,7 +166,6 @@ public class Main {
         if (boccoAPI.createSessions() == true) {
             boccoAPI.getFirstRooID();
             sendBoccoText(textMessage.readText(TextMessage.SESSION_OK));
-
         }
     }
 
@@ -232,9 +231,11 @@ public class Main {
 
         /* 異常値：false, 正常値：true */
         boolean flag = false;
-
+        BGMNum = cardScan();
+        System.err.println("BGM番号：" + BGMNum);
+        System.err.println("ステージ：" + stage);
         /* カード番号取得できなかったらBOCCOで教える & cardjudgeを抜け出す */
-        if (cardScan() == ERROR) {
+        if (BGMNum == ERROR) {
             sendBoccoText(textMessage.readText(TextMessage.NOT_SCAN));
             return flag;
         } else {
@@ -382,27 +383,8 @@ public class Main {
 
     /* 再生ボタンが押されたときの挙動 */
     public void recentlySend() throws Exception {
-        String str = "";
-        String returnData = "";
-
-        try {
-            File file = new File(txtFilePath);
-            BufferedReader br = new BufferedReader(new FileReader(file));
-            str = br.readLine();
-            /* 文字列全てから必要なものだけ抽出する */
-            while (str != null) {
-                returnData = str;
-                System.out.println("取り出しデータ:" + returnData);
-                str = br.readLine();
-            }
-            br.close();
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
         /* 直近のデータを送信 */
-        sendBoccoText(returnData);
+        sendBoccoText(saveStory);
     }
 
     /* 書き込み可能か判断する. */
@@ -441,12 +423,12 @@ public class Main {
                 /* BOCCOに送れる範囲ならそのまま送信 */
                 if (story.length() < CUT_LENGTH) {
                     sendBoccoText(story);
-                    Thread.sleep(3000);
+                    Thread.sleep(5000);
                 } else {
                     /* CUT_LENGTHより長いならCUT_LENGTHずつ分けてBOCCOへ送信 */
                     for (cnt = 0; cnt + CUT_LENGTH < story.length(); cnt += CUT_LENGTH) {
                         sendBoccoText(story.substring(cnt, cnt + CUT_LENGTH));
-                        Thread.sleep(3000);
+                        Thread.sleep(5000);
                     }
                     /* 最後の行 */
                     sendBoccoText(story.substring(cnt));
