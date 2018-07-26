@@ -21,44 +21,50 @@ import javax.sound.sampled.UnsupportedAudioFileException;
  */
 public class BGMPlayer extends Thread {
 
-    private final AudioInputStream ais;
-    private final DataLine.Info dataLine;
-    private final SourceDataLine cardBGM;
-    private final byte[] data;
+    private AudioInputStream ais;
+    private DataLine.Info dataLine;
+    private SourceDataLine cardBGM;
+    private byte[] data;
+    private File file;
 
     private boolean flag;
 
     public BGMPlayer(int BGMNum) throws UnsupportedAudioFileException, IOException, LineUnavailableException {
-        this.ais = AudioSystem.getAudioInputStream(new File(BGMDir(BGMNum)));
-
-        AudioFormat format = ais.getFormat();
-        this.dataLine = new DataLine.Info(SourceDataLine.class, format);
-
-        this.cardBGM = (SourceDataLine) AudioSystem.getLine(this.dataLine);
-        this.cardBGM.open();
-        this.cardBGM.start();
-
-        this.data = new byte[this.cardBGM.getBufferSize()];
-
+        this.file = new File(BGMDir(BGMNum));
         this.flag = true;
     }
 
     @Override
     public void run() {
-        int size = -1;
 
-        while (true) {
-
-            try {
-                
+        try {
+            this.ais = AudioSystem.getAudioInputStream(this.file);
+            AudioFormat format = ais.getFormat();
+            this.dataLine = new DataLine.Info(SourceDataLine.class, format);
+            this.cardBGM = (SourceDataLine) AudioSystem.getLine(this.dataLine);
+            this.cardBGM.open();
+            this.cardBGM.start();
+            int size = -1;
+            this.data = new byte[this.cardBGM.getBufferSize()];
+            while (true) {
                 size = this.ais.read(this.data);
-                if (size == -1 || !flag) break;
 
+                if (size == -1) {
+                    ais.close();
+                    ais = AudioSystem.getAudioInputStream(this.file);
+                    continue;
+                }
                 this.cardBGM.write(this.data, 0, size);
-            } catch (Exception e) {
+                if (!flag) {
+                    break;
+                }
             }
+        } catch (LineUnavailableException e) {
+        } catch (IOException e) {
+        } catch (UnsupportedAudioFileException e) {
 
         }
+
     }
 
     public void stopBGM() {
@@ -77,7 +83,7 @@ public class BGMPlayer extends Thread {
             case 0:
             case 1:
             case 2:
-                fileDir += "start" + BGMNum + ".wav";
+                fileDir += BGMNum + ".wav";
                 break;
 
             /*    eventカード    */
@@ -90,14 +96,14 @@ public class BGMPlayer extends Thread {
             case 9:
             case 10:
             case 11:
-                fileDir += "event" + BGMNum + ".wav";
+                fileDir += BGMNum + ".wav";
                 break;
 
             /*    endカード    */
             case 12:
             case 13:
             case 14:
-                fileDir += "end" + BGMNum + ".wav";
+                fileDir += BGMNum + ".wav";
                 break;
         }
 
