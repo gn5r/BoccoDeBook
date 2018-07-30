@@ -26,7 +26,7 @@ public class PlayButtonListener implements GpioPinListenerDigital {
         if (gpdsce.getState() == PinState.LOW) {
 
             try {
-                /*    Boccoへ最新メッセージ送信    */
+                /* Boccoへ直近の変換文字列を送信 */
                 this.main.recentlySend();
             } catch (Exception e) {
                 e.printStackTrace();

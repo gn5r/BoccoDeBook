@@ -23,6 +23,8 @@ public class RecordingButtonListener implements GpioPinListenerDigital {
     private final GoogleSpeechAPI googleAPI;
     private int pushCnt;
     private final Main main;
+    private static final String rec_start = "sound/rec_sta.wav";
+    private static final String rec_finish = "sound/rec_fin.wav";
 
     public RecordingButtonListener(String GoogleAPIKey) {
         this.pushCnt = 0;
@@ -35,25 +37,38 @@ public class RecordingButtonListener implements GpioPinListenerDigital {
 
     @Override
     public void handleGpioPinDigitalStateChangeEvent(GpioPinDigitalStateChangeEvent gpdsce) {
-        if (gpdsce.getState() == PinState.HIGH) {
+        TextMessage textMessage = new TextMessage();
 
+        if (gpdsce.getState() == PinState.HIGH) {
             try {
                 this.pushCnt++;
                 this.microPhone.init();
-                /* 300000byte分の音データ録音 */
+
+                /* 録音開始音 */
+                this.main.soundPlay(rec_start);
+                /* 約10秒録音　↑との時間差が１～２秒 */
                 this.microPhone.startRec();
                 this.microPhone.stopRec();
+                /* 録音終了音 */
+                this.main.soundPlay(rec_finish);
+
                 /* 引数：ファイル名　.wavに変換 */
                 File recData = this.microPhone.convertWav("voice");
                 this.googleAPI.setFilePATH(recData.getPath());
 
                 /* 変換後文字列格納変数 */
                 String result = this.googleAPI.postGoogleAPI();
+
                 /*    音声認識が正常にされた場合    */
                 if (result != null) {
+                    /* 正常に録れたことをBoccoへ送信 */
+                    this.main.sendBoccoText(textMessage.readText(TextMessage.OK_REC));
                     System.out.println("変換文字列:" + result);
-                    /* ファイルに書き込み(一行データ)*/
-                    this.main.writeFile(result);
+                    /* ここで録音データを一時保存 =>ステップボタンが押されたら確定でファイルに書き込み */
+                    this.main.setStory(result);
+                } else {
+                    /* うまく読み込めなかった場合 BOCCOにメッセージ送信 */
+                    this.main.sendBoccoText(textMessage.readText(TextMessage.NOT_REC));
                 }
 
                 /*    録音ボタンが初めて押されたかどうかの検出    */

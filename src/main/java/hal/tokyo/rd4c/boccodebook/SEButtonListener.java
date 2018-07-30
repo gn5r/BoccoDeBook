@@ -34,7 +34,7 @@ public class SEButtonListener implements GpioPinListenerDigital {
 
     @Override
     public void handleGpioPinDigitalStateChangeEvent(GpioPinDigitalStateChangeEvent gpdsce) {
-        
+
         try {
 
             if (gpdsce.getState() == PinState.LOW) {

@@ -46,6 +46,8 @@ public class BGMPlayer extends Thread {
             this.cardBGM.start();
             int size = -1;
             this.data = new byte[this.cardBGM.getBufferSize()];
+            
+            /* 外部からStopかかるまでループ */
             while (true) {
                 size = this.ais.read(this.data);
 
@@ -60,13 +62,16 @@ public class BGMPlayer extends Thread {
                 }
             }
         } catch (LineUnavailableException e) {
+            e.printStackTrace();
         } catch (IOException e) {
+            e.printStackTrace();
         } catch (UnsupportedAudioFileException e) {
-
+            e.printStackTrace();
         }
 
     }
 
+    /* 音終了用 */
     public void stopBGM() {
         this.flag = false;
 
