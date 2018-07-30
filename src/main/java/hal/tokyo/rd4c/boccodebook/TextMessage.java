@@ -18,7 +18,7 @@ import java.io.IOException;
 public class TextMessage {
 
     private static final String textPath = "text/Message.txt";
-    private int cnt;
+    private int lineCnt;
     private BufferedReader br;
 
     /* 詳細はText/README.txt参照 */
@@ -30,29 +30,34 @@ public class TextMessage {
     public static final int CARD_STEP = 5;
     public static final int NOT_CARD = 6;
     public static final int READ_OK = 7;
-    public static final int NOT_REC = 8;
+    public static final int NO_REC = 8;    
+    public static final int NOT_REC = 9;
+    public static final int NOT_SCAN = 10;
+    public static final int OK_REC = 11;
+    
 
     /* return：テキストファイルから読み出したメッセージ文字列 */
     public String readText(int MessageNum) {
         String str = "";
         String ret = "";
-        cnt = 0;
+        lineCnt = 0;
 
         try {
             File file = new File(textPath);
            br = new BufferedReader(new FileReader(file));
             str = br.readLine();
-            /* 文字列全てから必要なものだけ抽出する */
+            /* 文字列全てから必要な行だけ抽出する */
             while (str != null) {
 
-                if (cnt == MessageNum) {
+                if (lineCnt == MessageNum) {
                     System.out.print(str);
                     ret = str;
                 }
                 str = br.readLine();
-                cnt++;
+                lineCnt++;
             }
             br.close();
+            
         } catch (FileNotFoundException e) {
             /* ファイルが見つからなかった */
             System.out.println(e);

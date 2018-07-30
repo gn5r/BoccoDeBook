@@ -37,19 +37,24 @@ public class Main {
     private static String mode;
     private static String sendText;
     private static NFCReader nfcReader;
-    /* 起動音のパス */
-    private static final String setupSoundPath = "setup/setup.wav";
+
+    /* 各音のファイルパス */
+    private static final String setupSoundPath = "sound/setup.wav";
+    private static final String buzzer = "sound/buzzer.wav";
+    private static final String load = "sound/load.wav";
+    private static final String OK = "sound/OK.wav";
+
     /* 物語格納用のパス */
     private static final String txtFilePath = "text/story.txt";
+    private static String saveStory = "";
 
-    private static Speaker speaker;
-
-    /* BOCCOと接続用String */
     private static String GOOGLE_API_KEY;
 
     /* BGM番号 */
     private static int BGMNum = 0;
+    /* BGM再生用 */
     private static BGMPlayer BPlayer;
+
     /* ステージ回数0-3 */
     private static int stage = 0;
     /* 終わりflag */
@@ -76,7 +81,7 @@ public class Main {
     /* メイン */
     public static void main(String[] args) throws Exception {
 
-        /*初期化 */
+        /* 初期化 */
         init(args);
 
         while (!endFlag) {
@@ -89,7 +94,7 @@ public class Main {
             }
         }
 
-        /* BOCCOに今までの文字列を送信 */
+        /* BOCCOに今までの文字列を送信 & 終了*/
         sendStory();
     }
 
@@ -104,13 +109,10 @@ public class Main {
         /* args[0]:BOCCOAPI args[1]:Email args[2]:PassWord args[3]:GOOGLE_API_KEY */
         boccoAPI = new BoccoAPI(args[0], args[1], args[2]);
         GOOGLE_API_KEY = args[3];
-        speaker = new Speaker();
         textMessage = new TextMessage();
 
         /* 起動音を鳴らす */
-        speaker.openFile(setupSoundPath);
-        speaker.playSE();
-        speaker.stopSE();
+        soundPlay(setupSoundPath);
 
         File file = new File(txtFilePath);
         if (file.exists()) {
@@ -163,8 +165,8 @@ public class Main {
         /* BOCCOの接続が確立できた場合 */
         if (boccoAPI.createSessions() == true) {
             boccoAPI.getFirstRooID();
-            boccoAPI.postMessage(textMessage.readText(TextMessage.SESSION_OK));
-            Thread.sleep(4000);
+            sendBoccoText(textMessage.readText(TextMessage.SESSION_OK));
+
         }
     }
 
@@ -192,14 +194,10 @@ public class Main {
                 System.out.println("想定外の数値が入力、終了します。");
                 return;
         }
-
-        System.out.println(stage + 1 + "枚目\n");
+//        System.out.println(stage + 1 + "枚目\n");
         /* ステップ押下の誘導メッセージ */
         sendText += textMessage.readText(TextMessage.CARD_STEP);
-        boccoAPI.postMessage(sendText);
-
-        Thread.sleep(3000);
-
+        sendBoccoText(sendText);
         /* カードセットが終了 */
         mode = "cardSetEnd";
 
@@ -211,21 +209,38 @@ public class Main {
     private static int cardScan() throws Exception {
         nfcReader = new NFCReader();
         int BGMNum = ERROR;
-        /* 正常な値が読み取れるまで */
-        while (BGMNum == ERROR) {
+        int cnt = 0;
+
+        /* 正常な値が読み取れるまで or 5回読み取れなかった場合 */
+        while (cnt < 5) {
+            /* 何かしら値が取れた場合は強制的に抜け出す */
+            if (BGMNum != ERROR) {
+                return BGMNum;
+            }
+            /* カード情報の取得 */
             BGMNum = nfcReader.readBGMNum();
-            Thread.sleep(2000);
+            Thread.sleep(500);
+            cnt++;
+            /* 読み込み中の音 */
+            soundPlay(load);
         }
         return BGMNum;
     }
 
-    /* カード番号取得後、正しいカードか判断 & 正しいカードならmodeを更新 */
+    /* カード番号取得後、正しいカードか判断 */
     public boolean cardJudge(int stage) throws Exception {
-        /* カード番号取得 */
-        BGMNum = cardScan();
 
         /* 異常値：false, 正常値：true */
         boolean flag = false;
+
+        /* カード番号取得できなかったらBOCCOで教える & cardjudgeを抜け出す */
+        if (cardScan() == ERROR) {
+            sendBoccoText(textMessage.readText(TextMessage.NOT_SCAN));
+            return flag;
+        } else {
+            /* 読み込み正常時の音 */
+            soundPlay(OK);
+        }
 
         /* ステージ数によって判断を変える */
         switch (stage) {
@@ -255,8 +270,6 @@ public class Main {
             case 3:
                 if (12 <= BGMNum && BGMNum < 15) {
                     flag = true;
-                    /* 前のLEDを消灯 */
-                    event2SELED.low();
                     /* SEボタンセット */
                     endingSE.addListener(new SEButtonListener(endingSELED, BGMNum));
                 }
@@ -267,13 +280,21 @@ public class Main {
                 break;
         }
 
-        /* stepボタンの開放 */
-        removeStepListener();
+        if (flag == true) {
+            /* stepボタンのリスナー開放 */
+            removeStepListener();
+        } else {
+            /* 違うカードが呼ばれたとき */
+            sendBoccoText(textMessage.readText(TextMessage.NOT_CARD));
+        }
         return flag;
     }
 
     /* ゲーム実行時呼ばれる */
     public void gamePlay() throws Exception {
+        /* 読み込み完了メッセージ */
+        sendBoccoText(textMessage.readText(TextMessage.READ_OK));
+        /* BGMセット & BGM Start */
         BPlayer = new BGMPlayer(BGMNum);
         BPlayer.start();
         /* 録音ボタンのリスナーを設定 */
@@ -305,6 +326,7 @@ public class Main {
         rec.removeAllListeners();
     }
 
+    /* Listener追加  */
     public void addStepListener() {
         step.addListener(new StepButtonListener(stage, mode));
     }
@@ -343,6 +365,7 @@ public class Main {
         try {
             /* 書き込みが可能ならば */
             if (checkBeforeWritefile(file)) {
+                /* 上書きなしで追加 */
                 PrintWriter pw = new PrintWriter(new BufferedWriter(new FileWriter(file, true)));
                 /* 文字列の書き込み & 改行して保存 */
                 pw.println(data);
@@ -379,7 +402,7 @@ public class Main {
             e.printStackTrace();
         }
         /* 直近のデータを送信 */
-        boccoAPI.postMessage(returnData);
+        sendBoccoText(returnData);
     }
 
     /* 書き込み可能か判断する. */
@@ -415,19 +438,18 @@ public class Main {
             story = br.readLine();
             /* 全ての列を網羅 */
             while (story != null) {
-                /* BOCCOに送れる範囲なら送信 */
+                /* BOCCOに送れる範囲ならそのまま送信 */
                 if (story.length() < CUT_LENGTH) {
-                    boccoAPI.postMessage(story);
+                    sendBoccoText(story);
+                    Thread.sleep(3000);
                 } else {
                     /* CUT_LENGTHより長いならCUT_LENGTHずつ分けてBOCCOへ送信 */
                     for (cnt = 0; cnt + CUT_LENGTH < story.length(); cnt += CUT_LENGTH) {
-                        boccoAPI.postMessage(story.substring(cnt, cnt + CUT_LENGTH));
-                        Thread.sleep(4000);
+                        sendBoccoText(story.substring(cnt, cnt + CUT_LENGTH));
+                        Thread.sleep(3000);
                     }
-                    /* BOCCOの読み待ち */
-                    Thread.sleep(4000);
                     /* 最後の行 */
-                    boccoAPI.postMessage(story.substring(cnt));
+                    sendBoccoText(story.substring(cnt));
                 }
                 /* 1行ずつ読み取りBOCCOに送信 */
                 story = br.readLine();
@@ -437,7 +459,47 @@ public class Main {
             /* 終了 */
             return;
         } catch (FileNotFoundException e) {
+            e.printStackTrace();
         } catch (IOException e) {
+            e.printStackTrace();
         }
     }
+
+    /* BOCCOに文字列を送る */
+    public static void sendBoccoText(String str) throws Exception {
+        boccoAPI.postMessage(str);
+        Thread.sleep(5000);
+    }
+
+    /* 強制的にフェイズを終わらせる */
+    public void setPhraseEnd(boolean flag) {
+        phraseEnd = flag;
+    }
+
+    /* 録音した文字列を一時保存 */
+    public void setStory(String str) {
+        saveStory = str;
+    }
+
+    /* パス上にある音をならす */
+    public static void soundPlay(String soundPath) throws InterruptedException {
+        Speaker speaker = new Speaker();
+        try {
+            speaker.openFile(soundPath);
+            speaker.playSE();
+            speaker.stopSE();
+        } catch (Exception e) {
+        }
+    }
+
+    /* 直近の録音文字列格納用 */
+    public String getStory() {
+        return saveStory;
+    }
+
+    /* ぶぶー */
+    public String getBuzzer() {
+        return buzzer;
+    }
+
 }

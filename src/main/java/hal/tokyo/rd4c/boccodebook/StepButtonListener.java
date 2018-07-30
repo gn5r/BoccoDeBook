@@ -31,36 +31,63 @@ public class StepButtonListener implements GpioPinListenerDigital {
     public void handleGpioPinDigitalStateChangeEvent(GpioPinDigitalStateChangeEvent gpdsce) {
 
         if (gpdsce.getState() == PinState.LOW) {
-
-            switch (this.mode) {
-                case "cardSetEnd": {
-                    try {
-                        /* カード認識＆カード判定に進む */
-                        this.main.cardJudge(stage);
-
-                        /* 録音リスナーセット */
-                        this.main.gamePlay();
-                    } catch (Exception e) {
-                        e.printStackTrace();
+            try {
+                Thread.sleep(500);
+                switch (this.mode) {
+                    /* カードを読み込み、正しいなら続け、違うカードをセットされたらフェーズを抜ける */
+                    case "cardSetEnd": {
+                        try {
+                            /* 適切なカードがセットされなかったら */
+                            if (this.main.cardJudge(stage) != true) {
+                                /* cardSetに戻る為にmainのphraseEndをtrueにする */
+                                this.main.setPhraseEnd(true);
+                                
+                                /* cardSetでstepボタンがaddされるためリスナー解放 */
+                                this.main.removeStepListener();
+                                
+                                /* ブザー音を鳴らす */
+                                this.main.soundPlay(this.main.getBuzzer());
+                            } else {
+                                
+                                /* 録音リスナーセット */
+                                this.main.gamePlay();
+                            }
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
                     }
-                }
-                break;
-
-                /* 終わりのカードか判断する。終わりならwhileから抜ける */
-                case "recVoiceEnd": {
-                    /* ボタン開放 */
-                    this.main.removeStepListener();
-                    this.main.removePlayListener();
-                    this.main.removeRecListener();                    
-
-                    this.main.BGMStop();
-                    this.main.endJudge();
                     break;
+
+                    /* 終わりのカードか判断する。終わりならwhileから抜ける */
+                    case "recVoiceEnd": {
+                        try {
+                            /* 最後に保存された文章をファイルに保存 */
+                            this.main.writeFile(this.main.getStory());
+
+                            /* ボタン開放 */
+                            this.main.removeStepListener();
+                            this.main.removePlayListener();
+                            this.main.removeRecListener();
+
+                            /* BGM終了 */
+                            this.main.BGMStop();
+                            
+                            /* 終わり判定 */
+                            this.main.endJudge();
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                        break;
+
+                    }
+                    default:
+                        System.out.println("StepButtonListener :" + this.mode);
+                        System.out.println("異常値を検出");
+                        break;
                 }
-                default:
-                    break;
+            } catch (InterruptedException e) {
+                e.printStackTrace();
             }
         }
-
     }
 }
