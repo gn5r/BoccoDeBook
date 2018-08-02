@@ -59,6 +59,9 @@ public class Main {
     private static int stage = 0;
     /* 終わりflag */
     private static boolean endFlag = false;
+    /* 2回め以降のプレイカウント */
+    private static boolean playCnt = false;
+
 
     /*    1フレーズが完成したかどうか    */
     private static boolean phraseEnd;
@@ -81,39 +84,43 @@ public class Main {
     /* メイン */
     public static void main(String[] args) throws Exception {
 
-        /* 初期化 */
-        init(args);
+        while (true) {
 
-        while (!endFlag) {
-            /* mode = CardSet & stepボタンのリスナー設定 */
-            cardSet(stage);
+            /* 初期化 */
+            init(args);
 
-            /* 終わりカードがセットされていない間繰り返す */
-            while (!phraseEnd) {
-                Thread.sleep(1000);
+            while (!endFlag) {
+                /* mode = CardSet & stepボタンのリスナー設定 */
+                cardSet(stage);
+
+                /* 終わりカードがセットされていない間繰り返す */
+                while (!phraseEnd) {
+                    Thread.sleep(1000);
+                }
             }
+            /* BOCCOに今までの文字列を送信 & 終了*/
+            sendBoccoText(textMessage.readText(TextMessage.END_STORY));
+            sendStory();
+            /* 終了文 */
+            sendBoccoText(textMessage.readText(TextMessage.END_PROJECT));
+            if (playCnt != true) {
+                playCnt = true;
+            }
+            Thread.sleep(5000);
+            /* すべてのリスナー開放 */
+            allReset();
         }
-
-        /* BOCCOに今までの文字列を送信 & 終了*/
-        sendStory();
     }
 
     /* 初期化 */
     private static void init(String[] args) throws Exception {
 
-        /* 引数の数が正しくない場合終了 */
-        if (args.length != 4) {
-            return;
-        }
-
-        /* args[0]:BOCCOAPI args[1]:Email args[2]:PassWord args[3]:GOOGLE_API_KEY */
-        boccoAPI = new BoccoAPI(args[0], args[1], args[2]);
-        GOOGLE_API_KEY = args[3];
         textMessage = new TextMessage();
+        stage = 0;
+        endFlag = false;
+        phraseEnd = false;
 
-        /* 起動音を鳴らす */
-        soundPlay(setupSoundPath);
-
+        /* Storyファイルのデータを消す */
         File file = new File(txtFilePath);
         if (file.exists()) {
             /* ファイルが存在している場合は削除 */
@@ -122,51 +129,65 @@ public class Main {
         /* ファイルを作成 */
         createFile(txtFilePath);
 
-        gpio = GpioFactory.getInstance();
+        /* 最初の一回のみ */
+        if (playCnt != true) {
+            /* 引数の数が正しくない場合終了 */
+            if (args.length != 4) {
+                return;
+            }
 
-        /*    各SEボタンとLED    */
-        startSE = gpio.provisionDigitalInputPin(RaspiPin.GPIO_00, PinPullResistance.PULL_UP);
-        startSE.setShutdownOptions(true);
+            /* args[0]:BOCCOAPI args[1]:Email args[2]:PassWord args[3]:GOOGLE_API_KEY */
+            boccoAPI = new BoccoAPI(args[0], args[1], args[2]);
+            GOOGLE_API_KEY = args[3];
 
-        startSELED = gpio.provisionDigitalOutputPin(RaspiPin.GPIO_02, "startSE", PinState.LOW);
-        startSELED.setShutdownOptions(true, PinState.LOW);
+            /* 起動音を鳴らす */
+            soundPlay(setupSoundPath);
 
-        event1SE = gpio.provisionDigitalInputPin(RaspiPin.GPIO_15, PinPullResistance.PULL_UP);
-        event1SE.setShutdownOptions(true);
+            gpio = GpioFactory.getInstance();
 
-        event1SELED = gpio.provisionDigitalOutputPin(RaspiPin.GPIO_16, "event1SE", PinState.LOW);
-        event1SELED.setShutdownOptions(true, PinState.LOW);
+            /*    各SEボタンとLED    */
+            startSE = gpio.provisionDigitalInputPin(RaspiPin.GPIO_00, PinPullResistance.PULL_UP);
+            startSE.setShutdownOptions(true);
 
-        event2SE = gpio.provisionDigitalInputPin(RaspiPin.GPIO_26, PinPullResistance.PULL_UP);
-        event2SE.setShutdownOptions(true);
+            startSELED = gpio.provisionDigitalOutputPin(RaspiPin.GPIO_02, "startSE", PinState.LOW);
+            startSELED.setShutdownOptions(true, PinState.LOW);
 
-        event2SELED = gpio.provisionDigitalOutputPin(RaspiPin.GPIO_27, "Sevent2SE", PinState.LOW);
-        event2SELED.setShutdownOptions(true, PinState.LOW);
+            event1SE = gpio.provisionDigitalInputPin(RaspiPin.GPIO_15, PinPullResistance.PULL_UP);
+            event1SE.setShutdownOptions(true);
 
-        endingSE = gpio.provisionDigitalInputPin(RaspiPin.GPIO_28, PinPullResistance.PULL_UP);
-        endingSE.setShutdownOptions(true);
+            event1SELED = gpio.provisionDigitalOutputPin(RaspiPin.GPIO_16, "event1SE", PinState.LOW);
+            event1SELED.setShutdownOptions(true, PinState.LOW);
 
-        endingSELED = gpio.provisionDigitalOutputPin(RaspiPin.GPIO_29, "endingSE", PinState.LOW);
-        endingSELED.setShutdownOptions(true, PinState.LOW);
+            event2SE = gpio.provisionDigitalInputPin(RaspiPin.GPIO_26, PinPullResistance.PULL_UP);
+            event2SE.setShutdownOptions(true);
 
-        rec = gpio.provisionDigitalInputPin(RaspiPin.GPIO_21, PinPullResistance.PULL_UP);
-        rec.setShutdownOptions(true);
+            event2SELED = gpio.provisionDigitalOutputPin(RaspiPin.GPIO_27, "Sevent2SE", PinState.LOW);
+            event2SELED.setShutdownOptions(true, PinState.LOW);
 
-        play = gpio.provisionDigitalInputPin(RaspiPin.GPIO_22, PinPullResistance.PULL_UP);
-        play.setShutdownOptions(true);
+            endingSE = gpio.provisionDigitalInputPin(RaspiPin.GPIO_28, PinPullResistance.PULL_UP);
+            endingSE.setShutdownOptions(true);
 
-        step = gpio.provisionDigitalInputPin(RaspiPin.GPIO_23, PinPullResistance.PULL_UP);
-        step.setShutdownOptions(true);
+            endingSELED = gpio.provisionDigitalOutputPin(RaspiPin.GPIO_29, "endingSE", PinState.LOW);
+            endingSELED.setShutdownOptions(true, PinState.LOW);
 
-        /* RC522_Initを複数呼び出すと危険なため */
-        RaspRC522 rsp = new RaspRC522();
-        rsp.RC522_Init();
+            rec = gpio.provisionDigitalInputPin(RaspiPin.GPIO_21, PinPullResistance.PULL_UP);
+            rec.setShutdownOptions(true);
 
-        /* BOCCOの接続が確立できた場合 */
-        if (boccoAPI.createSessions() == true) {
-            boccoAPI.getFirstRooID();
-            sendBoccoText(textMessage.readText(TextMessage.SESSION_OK));
+            play = gpio.provisionDigitalInputPin(RaspiPin.GPIO_22, PinPullResistance.PULL_UP);
+            play.setShutdownOptions(true);
 
+            step = gpio.provisionDigitalInputPin(RaspiPin.GPIO_23, PinPullResistance.PULL_UP);
+            step.setShutdownOptions(true);
+
+            /* RC522_Initを複数呼び出すと危険なため */
+            RaspRC522 rsp = new RaspRC522();
+            rsp.RC522_Init();
+
+            /* BOCCOの接続が確立できた場合 */
+            if (boccoAPI.createSessions() == true) {
+                boccoAPI.getFirstRooID();
+                sendBoccoText(textMessage.readText(TextMessage.SESSION_OK));
+            }
         }
     }
 
@@ -232,9 +253,11 @@ public class Main {
 
         /* 異常値：false, 正常値：true */
         boolean flag = false;
-
+        BGMNum = cardScan();
+        System.err.println("BGM番号：" + BGMNum);
+        System.err.println("ステージ：" + stage);
         /* カード番号取得できなかったらBOCCOで教える & cardjudgeを抜け出す */
-        if (cardScan() == ERROR) {
+        if (BGMNum == ERROR) {
             sendBoccoText(textMessage.readText(TextMessage.NOT_SCAN));
             return flag;
         } else {
@@ -382,27 +405,8 @@ public class Main {
 
     /* 再生ボタンが押されたときの挙動 */
     public void recentlySend() throws Exception {
-        String str = "";
-        String returnData = "";
-
-        try {
-            File file = new File(txtFilePath);
-            BufferedReader br = new BufferedReader(new FileReader(file));
-            str = br.readLine();
-            /* 文字列全てから必要なものだけ抽出する */
-            while (str != null) {
-                returnData = str;
-                System.out.println("取り出しデータ:" + returnData);
-                str = br.readLine();
-            }
-            br.close();
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
         /* 直近のデータを送信 */
-        sendBoccoText(returnData);
+        sendBoccoText(saveStory);
     }
 
     /* 書き込み可能か判断する. */
@@ -441,12 +445,12 @@ public class Main {
                 /* BOCCOに送れる範囲ならそのまま送信 */
                 if (story.length() < CUT_LENGTH) {
                     sendBoccoText(story);
-                    Thread.sleep(3000);
+                    Thread.sleep(5000);
                 } else {
                     /* CUT_LENGTHより長いならCUT_LENGTHずつ分けてBOCCOへ送信 */
                     for (cnt = 0; cnt + CUT_LENGTH < story.length(); cnt += CUT_LENGTH) {
                         sendBoccoText(story.substring(cnt, cnt + CUT_LENGTH));
-                        Thread.sleep(3000);
+                        Thread.sleep(5000);
                     }
                     /* 最後の行 */
                     sendBoccoText(story.substring(cnt));
@@ -456,8 +460,8 @@ public class Main {
             }
             br.close();
             System.out.println("送信終了");
-            /* 終了 */
-            return;
+//            /* 終了 */
+//            return;
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         } catch (IOException e) {
@@ -500,6 +504,21 @@ public class Main {
     /* ぶぶー */
     public String getBuzzer() {
         return buzzer;
+    }
+
+    private static void allReset() {
+        startSELED.low();
+        event1SELED.low();
+        event2SELED.low();
+        endingSELED.low();
+        startSE.removeAllListeners();
+        event1SE.removeAllListeners();
+        event2SE.removeAllListeners();
+        endingSE.removeAllListeners();
+        rec.removeAllListeners();
+        play.removeAllListeners();
+        step.removeAllListeners();
+
     }
 
 }

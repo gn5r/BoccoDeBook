@@ -63,6 +63,7 @@ public class RecordingButtonListener implements GpioPinListenerDigital {
                 if (result != null) {
                     /* 空白があるとBoccoが喋らなくなるため空白を句読点に変換 */
                     result = result.replace("　", "、");
+                    result = result.replace(" ", "、");
                     /* 正常に録れたことをBoccoへ送信 */
                     this.main.sendBoccoText(textMessage.readText(TextMessage.OK_REC));
                     System.out.println("変換文字列:" + result);
@@ -73,12 +74,9 @@ public class RecordingButtonListener implements GpioPinListenerDigital {
                     this.main.sendBoccoText(textMessage.readText(TextMessage.NOT_REC));
                 }
 
-                /*    録音ボタンが初めて押されたかどうかの検出    */
-                if (this.pushCnt == 1) {
-                    /*    再生ボタンとステップボタンのリスナーをセット    */
-                    System.out.println("pushCnt == 1");
-                    this.main.setListener();
-                }
+                /*    再生ボタンとステップボタンのリスナーをセット    */
+                System.out.println("pushCnt == 1");
+                this.main.setListener();
             } catch (Exception e) {
                 e.printStackTrace();
             }

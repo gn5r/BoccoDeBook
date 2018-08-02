@@ -34,6 +34,8 @@ public class TextMessage {
     public static final int NOT_REC = 9;
     public static final int NOT_SCAN = 10;
     public static final int OK_REC = 11;
+    public static final int END_STORY = 12;
+    public static final int END_PROJECT = 13;
     
 
     /* return：テキストファイルから読み出したメッセージ文字列 */
